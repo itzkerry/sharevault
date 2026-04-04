@@ -1,0 +1,21 @@
+enum MediaType {
+    IMAGE
+    VIDEO
+}
+
+model Media {
+    id String @id @default(cuid())
+    name String             // original file name
+    fileId String           // ImageKit file ID
+    url String              // ImageKit delivery URL
+    thumbnailUrl String?    // Imagekit thumbnail URL
+    type MediaType
+    size Int                // in bytes
+    width Int?
+    height Int?
+    duration Float?
+    vaultId String
+    createdAt DateTime @default(now())
+
+    vault Vault @relation(fields:[vaultId], references:[id], onDelete: Cascade)
+}
