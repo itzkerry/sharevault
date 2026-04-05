@@ -1,0 +1,6 @@
+model OrphanedMedia {
+    id String @id @default(cuid())
+    fileId String @unique
+    reason String?
+    createdAt DateTime @default(now())
+}

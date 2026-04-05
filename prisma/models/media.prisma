@@ -18,4 +18,6 @@ model Media {
     createdAt DateTime @default(now())
 
     vault Vault @relation(fields:[vaultId], references:[id], onDelete: Cascade)
+
+    @@index([vaultId])
 }
