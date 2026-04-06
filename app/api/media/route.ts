@@ -6,34 +6,35 @@ import { getServerSession } from "next-auth";
 
 
 export async function POST(request:Request){
+    const session = await getServerSession(authOptions);
+    if(!session?.user){
+        return Response.json(
+            {error: "Unauthorized"},
+            {status: 401}
+        )
+    }
+    const body = await request.json();
+    const result = createMediaSchema.safeParse(body);
+    if(!result.success){
+        return Response.json(
+            {error: result.error.issues[0].message},
+            {status: 400}
+        )
+    }
+    const {
+        name, 
+        fileId, 
+        url, 
+        thumbnailUrl, 
+        type,
+        size,
+        width,
+        height,
+        duration,
+        vaultId
+    } = result.data;
+
     try{
-        const session = await getServerSession(authOptions);
-        if(!session?.user){
-            return Response.json(
-                {error: "Unauthorized"},
-                {status: 401}
-            )
-        }
-        const body = await request.json();
-        const result = createMediaSchema.safeParse(body);
-        if(!result.success){
-            return Response.json(
-                {error: result.error.issues[0].message},
-                {status: 400}
-            )
-        }
-        const {
-            name, 
-            fileId, 
-            url, 
-            thumbnailUrl, 
-            type,
-            size,
-            width,
-            height,
-            duration,
-            vaultId
-        } = result.data;
 
         const media = await prisma.media.create({
             data:{
@@ -54,6 +55,18 @@ export async function POST(request:Request){
 
     }catch(error){
         console.error("Error creating media : ",error);
+
+        // DB save failed -> delete from Imagekit
+        try{
+            await imagekit.deleteFile(fileId)
+        }catch{
+            await prisma.orphanedMedia.create({
+                data:{
+                    fileId,
+                    reason: "DB save failed, ImageKit cleanup failed"
+                }
+            })
+        }
         return Response.json(
             {error: "Failed to create media"},
             {status: 500}
