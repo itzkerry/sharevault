@@ -33,8 +33,15 @@ export const metadata: Metadata = {
     "secure vault",
     "cloud storage",
     "instant sharing",
+    "secure file sharing",
+    "private media vault",
+    "next.js cloud storage",
+    "encrypted sharing link",
+    "personal digital locker",
+    "secure postgres vault",
+    "instant file transfer",
   ],
-  authors: [{ name: "Your Name/Brand" }],
+  authors: [{ name: "Krishna maurya" }],
 
   // Icons configuration (Favicon)
   icons: {
@@ -53,13 +60,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://your-domain.com",
+    url: "https://sharevault-3ype.vercel.app",
     siteName: "Share Vault",
     title: "Share Vault | Simple. Secure. Instant.",
     description: "Simple. Secure. Instant file sharing.",
     images: [
       {
-        url: "/og-image.png", // Create a 1200x630 image and put it in /public
+        url: "https://sharevault-3ype.vercel.app/og-image.png", // Create a 1200x630 image and put it in /public
         width: 1200,
         height: 630,
         alt: "Share Vault Preview",
@@ -72,7 +79,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Share Vault",
     description: "Simple. Secure. Instant file sharing.",
-    images: ["/og-image.png"],
+    images: ["https://sharevault-3ype.vercel.app/og-image.png"],
   },
 };
 
