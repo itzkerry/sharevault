@@ -1,4 +1,5 @@
 "use client";
+
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,21 +12,86 @@ import {
 import { Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
-export default function LoginPage() {
+// Separate the inner content to handle useSearchParams safely
+function LoginContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const error = searchParams.get("error");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    setTimeout(() => setIsSubmitting(false), 5000);
-    signIn("google", { callbackUrl });
+
+    try {
+      // If using a custom error page, you can set redirect: false
+      // and handle error state manually.
+      await signIn("google", { callbackUrl });
+    } catch (err) {
+      console.error("Login failed", err);
+      setIsSubmitting(false);
+    }
   };
 
+  return (
+    <Card className="bg-card w-full rounded-lg border-none shadow-xl">
+      <CardHeader className="px-8 pt-10 pb-8 text-center">
+        <CardTitle className="text-foreground text-2xl leading-tight font-semibold">
+          Welcome to Share Vault
+        </CardTitle>
+
+        <CardDescription className="text-muted-foreground mt-2 text-[16px] font-normal">
+          Sign in to manage your files
+        </CardDescription>
+
+        {error && (
+          <p className="text-destructive mt-2 text-sm">
+            Authentication failed. Please try again.
+          </p>
+        )}
+      </CardHeader>
+
+      <CardContent className="space-y-6 px-8 pb-10">
+        <Button
+          variant="outline"
+          className="border-border hover:border-primary/30 hover:bg-secondary/10 h-14 w-full gap-3 rounded-xl text-[16px] font-medium transition-all active:scale-[0.98]"
+          onClick={handleSignIn}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Authenticating...
+            </>
+          ) : (
+            <>
+              <GoogleIcon />
+              Continue with Google
+            </>
+          )}
+        </Button>
+
+        <p className="text-muted-foreground px-6 text-center text-[12px] leading-relaxed font-normal">
+          By continuing, you agree to our{" "}
+          <span className="hover:text-primary cursor-pointer underline transition-colors">
+            Terms of Service
+          </span>
+          {" and "}
+          <span className="hover:text-primary cursor-pointer underline transition-colors">
+            Privacy Policy
+          </span>
+          .
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Main Page Component
+export default function LoginPage() {
   return (
     <div className="bg-background flex min-h-svh w-full flex-col items-center justify-center p-4">
       <div className="flex-1"></div>
@@ -33,63 +99,21 @@ export default function LoginPage() {
       <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center">
         <div className="mb-10 flex flex-col items-center">
           <Logo className="text-primary h-30 w-30" />
-
           <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
             Share Vault
           </h1>
-
           <p className="text-muted-foreground mt-1 text-base font-normal sm:text-lg">
             Simple. Secure. Instant.
           </p>
         </div>
 
-        <Card className="bg-card w-full rounded-lg border-none shadow-xl">
-          <CardHeader className="px-8 pt-10 pb-8 text-center">
-            <CardTitle className="text-foreground text-2xl leading-tight font-semibold">
-              Welcome to Share Vault
-            </CardTitle>
-
-            <CardDescription className="text-muted-foreground mt-2 text-[16px] font-normal">
-              Sign in to manage your files
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-6 px-8 pb-10">
-            <Button
-              variant="outline"
-              className="border-border hover:border-primary/30 hover:bg-secondary/10 h-14 w-full gap-3 rounded-xl text-[16px] font-medium transition-all active:scale-[0.98]"
-              onClick={handleSignIn}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Authenticating...
-                </>
-              ) : (
-                <>
-                  <GoogleIcon />
-                  Continue with Google
-                </>
-              )}
-            </Button>
-
-            <p className="text-muted-foreground px-6 text-center text-[12px] leading-relaxed font-normal">
-              By continuing, you agree to our{" "}
-              <span className="hover:text-primary cursor-pointer underline transition-colors">
-                Terms of Service
-              </span>
-              {" and "}
-              <span className="hover:text-primary cursor-pointer underline transition-colors">
-                Privacy Policy
-              </span>
-              .
-            </p>
-          </CardContent>
-        </Card>
+        {/* Wrap in Suspense to prevent build-time errors with useSearchParams */}
+        <Suspense fallback={<Loader2 className="animate-spin" />}>
+          <LoginContent />
+        </Suspense>
       </div>
 
-      <footer className="text-muted-foreground flex flex-1 flex-col items-center justify-end gap-2 text-sm font-normal">
+      <footer className="text-muted-foreground flex flex-1 flex-col items-center justify-end gap-2 py-6 text-sm font-normal">
         <div className="flex gap-4">
           <span className="hover:text-foreground cursor-pointer transition-colors">
             Privacy
