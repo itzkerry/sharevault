@@ -10,16 +10,20 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSignIn = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setTimeout(() => setIsSubmitting(false), 5000);
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl });
   };
 
   return (
