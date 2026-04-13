@@ -20,7 +20,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, TouchEvent } from "react";
 import { formatDate, formatFileSize } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { apiClient } from "@/lib/api-client";
@@ -44,8 +44,41 @@ const MediaPreviewDialog = ({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Swipe State
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50; // Minimum pixels to travel to trigger a swipe
+
   const current = media[currentIndex];
   const isVideo = current?.type === "VIDEO";
+
+  // --- Logic for Prev/Next ---
+  const prev = () => setCurrentIndex((i) => (i > 0 ? i - 1 : i));
+  const next = () => setCurrentIndex((i) => (i < media.length - 1 ? i + 1 : i));
+
+  // --- Touch Handlers ---
+  const onTouchStart = (e: TouchEvent) => {
+    touchEndX.current = null; // reset
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      next();
+    } else if (isRightSwipe) {
+      prev();
+    }
+  };
 
   // handle delete
   const [deleting, setDeleting] = useState(false);
@@ -93,12 +126,10 @@ const MediaPreviewDialog = ({
     }
   };
 
-  // sync index when dialog opens on a different item
   useEffect(() => {
     setCurrentIndex(initialIndex);
   }, [initialIndex]);
 
-  // scroll thumbnail into view when index changes
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
@@ -110,9 +141,6 @@ const MediaPreviewDialog = ({
     }, 100);
     return () => clearTimeout(timer);
   }, [currentIndex, open]);
-
-  const prev = () => setCurrentIndex((i) => (i > 0 ? i - 1 : i));
-  const next = () => setCurrentIndex((i) => (i < media.length - 1 ? i + 1 : i));
 
   if (!current) return null;
 
@@ -139,25 +167,32 @@ const MediaPreviewDialog = ({
           </DialogClose>
         </DialogHeader>
 
-        {/* main preview */}
-        <div className="relative flex flex-1 items-center justify-center overflow-hidden p-5">
+        {/* Main Preview with Swipe Handlers */}
+        <div
+          className="relative flex flex-1 touch-pan-y items-center justify-center overflow-hidden p-5"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {currentIndex > 0 && (
             <button
               onClick={prev}
-              className="text-muted-foreground absolute left-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition hover:bg-white/20"
+              className="text-muted-foreground absolute left-3 z-10 hidden h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition hover:bg-white/20 md:flex"
             >
               <ChevronLeft size={18} />
             </button>
           )}
 
           {isVideo ? (
-            <video
-              key={current.id}
-              src={current.url}
-              controls
-              autoPlay
-              className="max-h-full max-w-full rounded-lg object-contain"
-            />
+            <div className="flex h-full w-full items-center justify-center">
+              <video
+                key={current.id}
+                src={current.url}
+                controls
+                autoPlay
+                className="max-h-full max-w-full rounded-lg object-contain"
+              />
+            </div>
           ) : (
             <div className="relative h-full w-full">
               <Image
@@ -165,8 +200,9 @@ const MediaPreviewDialog = ({
                 src={current.url}
                 alt={current.name}
                 fill
-                className="rounded-lg object-contain"
+                className="pointer-events-none rounded-lg object-contain"
                 sizes="100vw"
+                priority
               />
             </div>
           )}
@@ -174,16 +210,15 @@ const MediaPreviewDialog = ({
           {currentIndex < media.length - 1 && (
             <button
               onClick={next}
-              className="text-muted-foreground absolute right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition hover:bg-white/20"
+              className="text-muted-foreground absolute right-3 z-10 hidden h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition hover:bg-white/20 md:flex"
             >
               <ChevronRight size={18} />
             </button>
           )}
         </div>
 
-        {/* footer  */}
+        {/* Footer */}
         <div className="bg-muted flex flex-col gap-5 overflow-hidden px-5 py-5">
-          {/* thumbnail strip */}
           <div className="no-scrollbar flex gap-2 overflow-x-auto px-1 py-1">
             <div className="mx-auto flex min-w-max gap-2">
               {media.map((item, i) => {
@@ -231,7 +266,6 @@ const MediaPreviewDialog = ({
             <div className="text-muted-foreground font-secondary flex flex-col font-medium">
               <div className="text-sm">Uploaded : </div>
               <div className="px-1 text-[10px]">
-                {" "}
                 {formatDate(current.createdAt)}
               </div>
             </div>
