@@ -142,6 +142,30 @@ const MediaPreviewDialog = ({
     return () => clearTimeout(timer);
   }, [currentIndex, open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    // Add the hash
+    window.location.hash = "preview";
+
+    const handlePopState = () => {
+      // If the hash is gone, the user pressed 'back'
+      if (!window.location.hash.includes("preview")) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      // Cleanup: Remove hash if closed via the "X" button
+      if (window.location.hash === "#preview") {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    };
+  }, [open, onClose]);
+
   if (!current) return null;
 
   return (
@@ -149,7 +173,7 @@ const MediaPreviewDialog = ({
       <DialogContent
         showCloseButton={false}
         size="full"
-        className="flex h-screen w-full flex-col gap-0 rounded-none border-none bg-transparent p-0 backdrop-blur-md"
+        className="flex h-svh w-full flex-col gap-0 rounded-none border-none bg-transparent p-0 backdrop-blur-md"
       >
         <DialogHeader className="bg-muted flex flex-row items-center justify-between gap-1 px-5 py-4">
           <div className="flex min-w-0 flex-col gap-1">
