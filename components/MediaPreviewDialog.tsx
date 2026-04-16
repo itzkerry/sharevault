@@ -171,6 +171,10 @@ const MediaPreviewDialog = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") prev();
+          if (e.key === "ArrowRight") next();
+        }}
         showCloseButton={false}
         size="full"
         className="flex h-svh w-full flex-col gap-0 rounded-none border-none bg-transparent p-0 backdrop-blur-md"
@@ -233,6 +237,10 @@ const MediaPreviewDialog = ({
 
           {currentIndex < media.length - 1 && (
             <button
+              onKeyDown={(e) => {
+                if (e.key === "ArrowLeft") prev();
+                if (e.key === "ArrowRight") next();
+              }}
               onClick={next}
               className="text-muted-foreground absolute right-3 z-10 hidden h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition hover:bg-white/20 md:flex"
             >
